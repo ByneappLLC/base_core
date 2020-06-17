@@ -30,7 +30,7 @@ class GetUserUseCase extends UseCase<int, User> {
 void main() {
   final subscription = CompositeSubscription();
   final useCase = GetUserUseCase();
-  final userManager = DataManager<User, int, GetUserUseCase>(useCase);
+  final userManager = DataManager<int, User, GetUserUseCase>(useCase);
 
   group('Test DataManager', () {
     setUp(() {

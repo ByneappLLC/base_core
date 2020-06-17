@@ -3,7 +3,10 @@ import 'dart:async';
 import 'package:base_core/base_core.dart';
 import 'package:rxdart/rxdart.dart';
 
-class DataManager<D, P, U extends UseCase<P, D>> {
+/// [P] optional param needed to load the data
+/// [D] data being managed
+/// [U] usecase for load the data from db or api
+class DataManager<P, D, U extends UseCase<P, D>> {
   DataManager(this.useCase, {D initData})
       : rx = initData != null
             ? BehaviorSubject<D>.seeded(initData)
