@@ -37,13 +37,16 @@ void main() {
       subscription.add(userManager.subscriber);
     });
 
-    test('Should emit expected data', () {
-      userManager.stream.listen(expectAsync1((event) {
+    test('Should emit expected data', () async {
+      final subscription = userManager.stream.listen(expectAsync1((event) {
         expect(event.runtimeType, User);
         expect(event.name, 'name');
       }));
 
-      userManager.getData(3);
+      userManager.load(3);
+
+      await Future.delayed(Duration(milliseconds: 550));
+      subscription.cancel();
     });
 
     test('Should emait failure', () {
@@ -51,18 +54,26 @@ void main() {
         expect(event.runtimeType, NotFound);
       }));
 
-      userManager.getData();
+      userManager.load();
     });
 
     test('Should emit loading', () async {
       expect(userManager.isLoading, emitsInOrder([false, true, false, true]));
 
-      userManager.getData(3);
+      userManager.load(3);
 
       await Future.delayed(
-          Duration(milliseconds: 1200)); // wait for the previous call to finish
+          Duration(milliseconds: 510)); // wait for the previous call to finish
 
-      userManager.getData(3);
+      userManager.load(3);
+    });
+
+    test('Should update name with update function', () async {
+      final nameSteam = userManager.stream.map((event) => event.name);
+
+      expect(nameSteam, emitsInOrder(['name', 'newName']));
+
+      userManager.update(User('newName', '23'));
     });
 
     tearDown(() {

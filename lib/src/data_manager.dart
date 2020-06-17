@@ -28,8 +28,12 @@ class DataManager<D, P, U extends UseCase<P, D>> {
           .onFailureForwardTo(_onFailure))
       .listen(rx.add);
 
-  void getData([P params]) {
+  void load([P params]) {
     _getData.add(params);
+  }
+
+  void update(D data) {
+    rx.add(data);
   }
 
   void close() {
