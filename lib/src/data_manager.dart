@@ -3,16 +3,20 @@ import 'dart:async';
 import 'package:base_core/base_core.dart';
 import 'package:rxdart/rxdart.dart';
 
-class DataManager<T, P> {
-  DataManager(this.useCase, {T initData})
-      : rx = BehaviorSubject<T>.seeded(initData);
+class DataManager<D, P, U extends UseCase<P, D>> {
+  DataManager(this.useCase, {D initData})
+      : rx = initData != null
+            ? BehaviorSubject<D>.seeded(initData)
+            : BehaviorSubject<D>();
 
   final _onFailure = PublishSubject<Failure>();
   final _getData = PublishSubject<P>();
   final _activityIndicator = ActivityIndicator();
 
-  final BehaviorSubject<T> rx;
-  final UseCase<P, T> useCase;
+  final BehaviorSubject<D> rx;
+  Stream<D> get stream => rx.stream;
+  D get value => rx.value;
+  final U useCase;
 
   Stream<bool> get isLoading => _activityIndicator.stream;
   Stream<Failure> get onFailure => _onFailure.stream;
