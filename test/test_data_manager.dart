@@ -54,8 +54,13 @@ void main() {
       userManager.getData();
     });
 
-    test('Should emit loading', () {
-      expect(userManager.isLoading, emitsInOrder([false, true]));
+    test('Should emit loading', () async {
+      expect(userManager.isLoading, emitsInOrder([false, true, false, true]));
+
+      userManager.getData(3);
+
+      await Future.delayed(
+          Duration(milliseconds: 1200)); // wait for the previous call to finish
 
       userManager.getData(3);
     });
