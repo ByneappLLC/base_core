@@ -123,6 +123,6 @@ extension ForwardFailure<T> on Stream<Either<Failure, T>> {
       event.leftMap(failureSink.add);
     })
         .where((event) => event.isRight())
-        .map((event) => event.getOrElse(() => null));
+        .map((event) => event.fold(null, (data) => data));
   }
 }
