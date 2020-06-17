@@ -6,8 +6,6 @@ import 'package:rxdart/subjects.dart';
 class ActivityIndicator extends Stream<bool> implements ValueStream<bool> {
   final BehaviorSubject<int> _loadingCounter = BehaviorSubject.seeded(0);
 
-  ActivityIndicator();
-
   @override
   bool get value => _loadingCounter.value > 0;
   Stream<bool> get stream => _loadingCounter.map((event) => event > 0);
