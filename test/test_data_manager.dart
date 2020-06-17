@@ -27,10 +27,44 @@ class GetUserUseCase extends UseCase<int, User> {
   }
 }
 
+class UpdateUserUseCase extends UseCase<String, User> {
+  @override
+  Future<Either<Failure, User>> execute(String params) async {
+    if (params == null) {
+      return left(NotFound());
+    } else {
+      final res = await Future.delayed(
+          Duration(milliseconds: 500), () => User(params, '11'));
+
+      return right(res);
+    }
+  }
+}
+
+class UserDataManager extends DataManager<User, UseCase<dynamic, User>> {
+  UserDataManager() : super([GetUserUseCase(), UpdateUserUseCase()]);
+
+  getUser() {
+    runUseCase<GetUserUseCase, int>(3);
+  }
+
+  updateUser() {
+    runUseCase<UpdateUserUseCase, String>('fredo');
+  }
+
+  throwError() {
+    runUseCase<GetUserUseCase, int>(null);
+  }
+
+  @override
+  void close() {
+    super.close();
+  }
+}
+
 void main() {
   final subscription = CompositeSubscription();
-  final useCase = GetUserUseCase();
-  final userManager = DataManager<int, User, GetUserUseCase>(useCase);
+  final userManager = UserDataManager();
 
   group('Test DataManager', () {
     setUp(() {
@@ -43,37 +77,39 @@ void main() {
         expect(event.name, 'name');
       }));
 
-      userManager.load(3);
+      userManager.getUser();
 
-      await Future.delayed(Duration(milliseconds: 550));
+      await userManager.waitDone();
       subscription.cancel();
     });
 
-    test('Should emait failure', () {
+    test('Should emait failure', () async {
       userManager.onFailure.listen(expectAsync1((event) {
         expect(event.runtimeType, NotFound);
       }));
 
-      userManager.load();
+      userManager.throwError();
+
+      await userManager.waitDone();
     });
 
     test('Should emit loading', () async {
       expect(userManager.isLoading, emitsInOrder([false, true, false, true]));
 
-      userManager.load(3);
+      userManager.getUser();
 
-      await Future.delayed(
-          Duration(milliseconds: 510)); // wait for the previous call to finish
+      await userManager.waitDone();
 
-      userManager.load(3);
+      userManager.getUser();
+      await userManager.waitDone();
     });
 
     test('Should update name with update function', () async {
       final nameSteam = userManager.stream.map((event) => event.name);
 
-      expect(nameSteam, emitsInOrder(['name', 'newName']));
+      expect(nameSteam, emitsInOrder(['name', 'fredo']));
 
-      userManager.update(User('newName', '23'));
+      userManager.updateUser();
     });
 
     tearDown(() {
