@@ -18,7 +18,7 @@ abstract class DataManager<D, U extends UseCase<dynamic, D>> {
   final _activityIndicator = ActivityIndicator();
   final onDone = PublishSubject();
 
-  Future<void> waitDone() => onDone.first;
+  Future<void> get waitDone => onDone.first;
 
   final BehaviorSubject<D> rx;
   Stream<D> get stream => rx.stream;

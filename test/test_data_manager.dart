@@ -79,7 +79,7 @@ void main() {
 
       userManager.getUser();
 
-      await userManager.waitDone();
+      await userManager.waitDone;
       subscription.cancel();
     });
 
@@ -90,7 +90,7 @@ void main() {
 
       userManager.throwError();
 
-      await userManager.waitDone();
+      await userManager.waitDone;
     });
 
     test('Should emit loading', () async {
@@ -98,10 +98,10 @@ void main() {
 
       userManager.getUser();
 
-      await userManager.waitDone();
+      await userManager.waitDone;
 
       userManager.getUser();
-      await userManager.waitDone();
+      await userManager.waitDone;
     });
 
     test('Should update name with update function', () async {
