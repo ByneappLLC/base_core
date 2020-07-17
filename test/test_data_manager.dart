@@ -56,6 +56,15 @@ class UserDataManager extends DataManager<User, UseCase<dynamic, User>> {
     runUseCase<GetUserUseCase, int>(null);
   }
 
+  getUserWithModification() {
+    asyncMapFn = (user) async {
+      final newUser = User('New User', '100');
+      return await Future.delayed(Duration(milliseconds: 100), () => newUser);
+    };
+
+    runUseCase<GetUserUseCase, int>(3);
+  }
+
   @override
   void close() {
     super.close();
@@ -110,6 +119,28 @@ void main() {
       expect(nameSteam, emitsInOrder(['name', 'fredo']));
 
       userManager.updateUser();
+      await userManager.waitDone;
+    });
+
+    test(
+        'Should run the AsyncMap to modify age, and automatically clear the fn',
+        () async {
+      final ageStream = userManager.stream.map((event) => event.age);
+
+      expect(ageStream, emitsInOrder(['11', '100']));
+
+      userManager.getUserWithModification();
+
+      await userManager.waitDone;
+    });
+
+    test('Should and automatically clear the fn', () async {
+      final ageStream = userManager.stream.map((event) => event.age);
+
+      expect(ageStream, emitsInOrder(['100', 'age']));
+      userManager.getUser();
+
+      await userManager.waitDone;
     });
 
     tearDown(() {
