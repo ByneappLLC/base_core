@@ -49,7 +49,7 @@ abstract class DataManager<D, U extends UseCase<dynamic, D>> {
   final bool autoClearFns;
   final _onFailure = PublishSubject<Failure>();
   final _runUseCase = PublishSubject<Tuple2<Type, dynamic>>();
-  final _activityIndicator = ActivityIndicator();
+  final activityIndicator = ActivityIndicator();
   final onDone = PublishSubject();
 
   Future<void> get waitDone => onDone.first;
@@ -64,15 +64,15 @@ abstract class DataManager<D, U extends UseCase<dynamic, D>> {
 
   final Iterable<U> useCases;
 
-  Stream<bool> get isLoading => _activityIndicator.stream;
+  Stream<bool> get isLoading => activityIndicator.stream;
   Stream<Failure> get onFailure => _onFailure.stream;
 
   StreamSubscription get subscriber => _runUseCase
-      .whereNotLoading(_activityIndicator)
+      .whereNotLoading(activityIndicator)
       .switchMap((p) => useCases
               .where((u) => u.runtimeType == p.value1)
               .first(p.value2)
-              .trackActivity(_activityIndicator)
+              .trackActivity(activityIndicator)
               .onFailureForwardTo(_onFailure)
               .optionalAsyncMap(asyncMapFn)
               .optionalMap(mapStreamFn)
@@ -107,7 +107,7 @@ abstract class DataManager<D, U extends UseCase<dynamic, D>> {
     rx.close();
     _onFailure.close();
     _runUseCase.close();
-    _activityIndicator.close();
+    activityIndicator.close();
     _listeners = null;
   }
 }
