@@ -4,6 +4,7 @@ import 'package:base_core/base_core.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
 import 'package:rxdart/rxdart.dart';
 
 typedef DataListener<T> = void Function(T);
@@ -41,10 +42,15 @@ extension<T> on Stream<T> {
 /// [D] data being managed
 /// [U] usecases to load or manipulate data from db or api
 abstract class DataManager<D, U extends UseCase<dynamic, D>> {
+  @protected
+  Logger logger;
+
   DataManager(this.useCases, {D initData, this.autoClearFns = true})
       : rx = initData != null
             ? BehaviorSubject<D>.seeded(initData)
-            : BehaviorSubject<D>();
+            : BehaviorSubject<D>() {
+    logger = Logger(runtimeType.toString());
+  }
 
   final bool autoClearFns;
   final _onFailure = PublishSubject<Failure>();
