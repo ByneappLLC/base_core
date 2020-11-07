@@ -27,14 +27,14 @@ class GetUserUseCase extends UseCase<int, User> {
   }
 }
 
-class UpdateUserUseCase extends UseCase<String, User> {
+class UpdateUserUseCase extends DataManagerUseCase<String, User> {
   @override
-  Future<Either<Failure, User>> execute(String params) async {
+  Future<Either<Failure, User>> execute(Tuple2<String, User> params) async {
     if (params == null) {
       return left(NotFound());
     } else {
       final res = await Future.delayed(
-          Duration(milliseconds: 500), () => User(params, '11'));
+          Duration(milliseconds: 500), () => User(params.value1, '11'));
 
       return right(res);
     }
@@ -49,7 +49,7 @@ class UserDataManager extends DataManager<User, UseCase<dynamic, User>> {
   }
 
   updateUser() {
-    runUseCase<UpdateUserUseCase, String>('fredo');
+    runUseCase<UpdateUserUseCase, Tuple2<String, User>>(tuple2('fredo', value));
   }
 
   throwError() {

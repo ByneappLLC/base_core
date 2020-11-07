@@ -22,3 +22,6 @@ abstract class UseCase<P, R> {
     return onResult(result);
   }
 }
+
+// A Usecase to be use inside a data manager
+abstract class DataManagerUseCase<P, R> extends UseCase<Tuple2<P, R>, R> {}
