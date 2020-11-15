@@ -41,7 +41,7 @@ class UpdateUserUseCase extends DataManagerUseCase<String, User> {
   }
 }
 
-class UserDataManager extends DataManager<User, UseCase<dynamic, User>> {
+class UserDataManager extends DataManager<User> {
   UserDataManager() : super([GetUserUseCase(), UpdateUserUseCase()]);
 
   getUser() {

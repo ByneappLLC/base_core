@@ -40,8 +40,7 @@ extension<T> on Stream<T> {
 }
 
 /// [D] data being managed
-/// [U] usecases to load or manipulate data from db or api
-abstract class DataManager<D, U extends UseCase<dynamic, D>> {
+abstract class DataManager<D> {
   @protected
   Logger logger;
 
@@ -68,7 +67,7 @@ abstract class DataManager<D, U extends UseCase<dynamic, D>> {
   Stream<D> get stream => rx.stream;
   D get value => rx.value;
 
-  final Iterable<U> useCases;
+  final Iterable<UseCase<dynamic, D>> useCases;
 
   Stream<bool> get isLoading => activityIndicator.stream;
   Stream<Failure> get onFailure => _onFailure.stream;
