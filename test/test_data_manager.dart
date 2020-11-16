@@ -49,7 +49,7 @@ class UserDataManager extends DataManager<User> {
   }
 
   updateUser() {
-    runUseCase<UpdateUserUseCase, Tuple2<String, User>>(tuple2('fredo', value));
+    runUseCase<UpdateUserUseCase, String>('fredo');
   }
 
   throwError() {

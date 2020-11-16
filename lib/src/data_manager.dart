@@ -53,7 +53,7 @@ abstract class DataManager<D> {
 
   final bool autoClearFns;
   final _onFailure = PublishSubject<Failure>();
-  final _runUseCase = PublishSubject<Tuple2<Type, dynamic>>();
+  final _runUseCase = PublishSubject<Tuple2<UseCase<dynamic, D>, dynamic>>();
   final activityIndicator = ActivityIndicator();
   final onDone = PublishSubject();
 
@@ -74,25 +74,31 @@ abstract class DataManager<D> {
 
   StreamSubscription get subscriber => _runUseCase
       .whereNotLoading(activityIndicator)
-      .switchMap((p) => useCases
-              .where((u) => u.runtimeType == p.value1)
-              .first(p.value2)
-              .trackActivity(activityIndicator)
-              .onFailureForwardTo(_onFailure)
-              .optionalAsyncMap(asyncMapFn)
-              .optionalMap(mapStreamFn)
-              .optionallyNotifyListeners(_listeners)
-              .doOnDone(() {
-            if (autoClearFns) {
-              asyncMapFn = null;
-              mapStreamFn = null;
-            }
-            onDone.add(null);
-          }))
+      .switchMap((t) => t
+          .apply((useCase, params) => useCase(params))
+          .trackActivity(activityIndicator)
+          .onFailureForwardTo(_onFailure)
+          .optionalAsyncMap(asyncMapFn)
+          .optionalMap(mapStreamFn)
+          .optionallyNotifyListeners(_listeners)
+          .doOnDone(_handleOnDone))
       .listen(rx.add);
 
+  void _handleOnDone() {
+    if (autoClearFns) {
+      asyncMapFn = null;
+      mapStreamFn = null;
+    }
+    onDone.add(null);
+  }
+
   void runUseCase<U, P>([P params]) {
-    _runUseCase.add(tuple2(U, params));
+    final useCase = useCases.firstWhere((u) => u.runtimeType == U);
+    if (useCase is DataManagerUseCase) {
+      _runUseCase.add(tuple2(useCase, tuple2(params, value)));
+    } else {
+      _runUseCase.add(tuple2(useCase, params));
+    }
   }
 
   void update(D data) {

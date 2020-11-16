@@ -17,6 +17,9 @@ abstract class UseCase<P, R> {
 
   Stream<Either<Failure, R>> call(P params) => execute(params).asStream();
 
+  Trampoline<Stream<Either<Failure, R>>> tStream(P params) =>
+      treturn(call(params));
+
   Future<B> result<B>(P params, B Function(Either<Failure, R>) onResult) async {
     final result = await execute(params);
     return onResult(result);
