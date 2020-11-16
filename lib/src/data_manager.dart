@@ -53,7 +53,7 @@ abstract class DataManager<D> {
 
   final bool autoClearFns;
   final _onFailure = PublishSubject<Failure>();
-  final _runUseCase = PublishSubject<Tuple2<UseCase<dynamic, D>, dynamic>>();
+  final _runUseCase = PublishSubject<Trampoline<Stream<Either<Failure, D>>>>();
   final activityIndicator = ActivityIndicator();
   final onDone = PublishSubject();
 
@@ -74,8 +74,8 @@ abstract class DataManager<D> {
 
   StreamSubscription get subscriber => _runUseCase
       .whereNotLoading(activityIndicator)
-      .switchMap((t) => t
-          .apply((useCase, params) => useCase(params))
+      .switchMap((useCase) => useCase
+          .run()
           .trackActivity(activityIndicator)
           .onFailureForwardTo(_onFailure)
           .optionalAsyncMap(asyncMapFn)
@@ -95,9 +95,9 @@ abstract class DataManager<D> {
   void runUseCase<U, P>([P params]) {
     final useCase = useCases.firstWhere((u) => u.runtimeType == U);
     if (useCase is DataManagerUseCase) {
-      _runUseCase.add(tuple2(useCase, tuple2(params, value)));
+      _runUseCase.add(useCase.tStream(tuple2<P, D>(params, value)));
     } else {
-      _runUseCase.add(tuple2(useCase, params));
+      _runUseCase.add(useCase.tStream(params));
     }
   }
 
