@@ -94,11 +94,14 @@ abstract class DataManager<D> {
 
   void runUseCase<U, P>([P params]) {
     final useCase = useCases.firstWhere((u) => u.runtimeType == U);
+
+    Trampoline<Stream<Either<Failure, D>>> runningUseCase;
     if (useCase is DataManagerUseCase) {
-      _runUseCase.add(useCase.tStream(tuple2<P, D>(params, value)));
+      runningUseCase = useCase.tStream(tuple2<P, D>(params, value));
     } else {
-      _runUseCase.add(useCase.tStream(params));
+      runningUseCase = useCase.tStream(params);
     }
+    _runUseCase.add(runningUseCase);
   }
 
   void update(D data) {

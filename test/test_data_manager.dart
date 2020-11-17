@@ -30,14 +30,15 @@ class GetUserUseCase extends UseCase<int, User> {
 class UpdateUserUseCase extends DataManagerUseCase<String, User> {
   @override
   Future<Either<Failure, User>> execute(Tuple2<String, User> params) async {
-    if (params == null) {
-      return left(NotFound());
-    } else {
-      final res = await Future.delayed(
-          Duration(milliseconds: 500), () => User(params.value1, '11'));
+    super.params(params);
 
-      return right(res);
-    }
+    final res = await Future.delayed(Duration(milliseconds: 500), updateUser);
+
+    return right(res);
+  }
+
+  User updateUser() {
+    return User(param, '11');
   }
 }
 
