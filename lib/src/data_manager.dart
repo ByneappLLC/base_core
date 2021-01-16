@@ -11,6 +11,8 @@ typedef DataListener<T> = void Function(T);
 typedef AsyncMapFn<T> = FutureOr<T> Function(T);
 typedef MapStreamFn<T> = Stream<T> Function(T);
 
+typedef UseCaseMapFn<D, P> = D Function(P, D);
+
 extension<T> on Stream<T> {
   Stream<T> optionalAsyncMap(AsyncMapFn<T> fn) {
     if (fn != null) {
@@ -53,7 +55,9 @@ abstract class DataManager<D> {
 
   final bool autoClearFns;
   final _onFailure = PublishSubject<Failure>();
-  final _runUseCase = PublishSubject<Trampoline<Stream<Either<Failure, D>>>>();
+  final _runUseCase = PublishSubject<
+      Tuple2<Trampoline<Stream<Either<Failure, dynamic>>>,
+          UseCaseMapFn<D, dynamic>>>();
   final activityIndicator = ActivityIndicator();
   final onDone = PublishSubject();
 
@@ -67,15 +71,17 @@ abstract class DataManager<D> {
   Stream<D> get stream => rx.stream;
   D get value => rx.value;
 
-  final Iterable<UseCase<dynamic, D>> useCases;
+  Map<Type, Tuple2<UseCase<dynamic, dynamic>, UseCaseMapFn<D, dynamic>>>
+      useCases;
 
   Stream<bool> get isLoading => activityIndicator.stream;
   Stream<Failure> get onFailure => _onFailure.stream;
 
   StreamSubscription get subscriber => _runUseCase
       .whereNotLoading(activityIndicator)
-      .switchMap((useCase) => useCase
+      .switchMap((t) => t.value1
           .run()
+          .map((e) => e.map((d) => d is D ? d : t?.value2?.call(d, value)))
           .trackActivity(activityIndicator)
           .onFailureForwardTo(_onFailure)
           .optionalAsyncMap(asyncMapFn)
@@ -93,15 +99,18 @@ abstract class DataManager<D> {
   }
 
   void runUseCase<U, P>([P params]) {
-    final useCase = useCases.firstWhere((u) => u.runtimeType == U);
+    final tuple = useCases[U];
+    final useCase = tuple.value1;
+    final mapFn = tuple.value2;
 
-    Trampoline<Stream<Either<Failure, D>>> runningUseCase;
+    Trampoline<Stream<Either<Failure, dynamic>>> runningUseCase;
+
     if (useCase is DataManagerUseCase) {
       runningUseCase = useCase.tStream(tuple2<P, D>(params, value));
     } else {
       runningUseCase = useCase.tStream(params);
     }
-    _runUseCase.add(runningUseCase);
+    _runUseCase.add(tuple2(runningUseCase, mapFn));
   }
 
   void update(D data) {

@@ -1,5 +1,6 @@
 import 'package:base_core/base_core.dart';
 import 'package:base_core/src/data_manager.dart';
+import 'package:base_core/src/use_case_generator.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rxdart/rxdart.dart';
@@ -42,8 +43,15 @@ class UpdateUserUseCase extends DataManagerUseCase<String, User> {
   }
 }
 
+class UseCaseWithMapFn extends UseCase<String, List<String>> {
+  @override
+  Future<Either<Failure, List<String>>> execute(String params) async {
+    return right(["1", "2"]);
+  }
+}
+
 class UserDataManager extends DataManager<User> {
-  UserDataManager() : super([GetUserUseCase(), UpdateUserUseCase()]);
+  UserDataManager(Generator generated) : super(generated.useCases);
 
   getUser() {
     runUseCase<GetUserUseCase, int>(3);
@@ -72,9 +80,18 @@ class UserDataManager extends DataManager<User> {
   }
 }
 
+class Generator extends UseCaseGenerator<User> {
+  Generator() {
+    addUseCase(GetUserUseCase());
+    addUseCase(UpdateUserUseCase());
+    addUseCaseWithMapFn(
+        UseCaseWithMapFn(), (res, value) => User(value.name, 'age'));
+  }
+}
+
 void main() {
   final subscription = CompositeSubscription();
-  final userManager = UserDataManager();
+  final userManager = UserDataManager(Generator());
 
   group('Test DataManager', () {
     setUp(() {
