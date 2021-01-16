@@ -11,7 +11,7 @@ typedef DataListener<T> = void Function(T);
 typedef AsyncMapFn<T> = FutureOr<T> Function(T);
 typedef MapStreamFn<T> = Stream<T> Function(T);
 
-typedef UseCaseMapFn<D, P> = D Function(P, D);
+typedef UseCaseMapFn<D, P> = D Function(D, P);
 
 extension<T> on Stream<T> {
   Stream<T> optionalAsyncMap(AsyncMapFn<T> fn) {

@@ -17,7 +17,7 @@ abstract class UseCaseGenerator<D> {
     }
   }
 
-  addUseCaseWithMapFn(
+  addUseCaseWithMapFn<UP>(
     UseCase<dynamic, dynamic> useCase,
     UseCaseMapFn<D, dynamic> mapFn,
   ) {
