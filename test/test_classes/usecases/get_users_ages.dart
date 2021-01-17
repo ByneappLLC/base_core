@@ -9,6 +9,8 @@ class UserAge {
   UserAge(this.id, this.age);
 }
 
+const UPDATED_AGE = 22;
+
 class GetUserAges extends UseCase<String, List<UserAge>> {
   static User mapToUser(User user, dynamic users) {
     final currentUser = User.id.get(user);
@@ -19,7 +21,7 @@ class GetUserAges extends UseCase<String, List<UserAge>> {
   @override
   Future<Either<Failure, List<UserAge>>> execute(String params) async {
     return right([
-      UserAge(1, 21),
+      UserAge(1, UPDATED_AGE),
       UserAge(2, 25),
       UserAge(3, 27),
       UserAge(4, 56),

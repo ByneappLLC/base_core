@@ -81,7 +81,7 @@ abstract class DataManager<D> {
       .whereNotLoading(activityIndicator)
       .switchMap((t) => t.value1
           .run()
-          .map((e) => e.map((d) => d is D ? d : t?.value2?.call(d, value)))
+          .map((e) => e.map((d) => d is D ? d : t?.value2?.call(value, d)))
           .trackActivity(activityIndicator)
           .onFailureForwardTo(_onFailure)
           .optionalAsyncMap(asyncMapFn)

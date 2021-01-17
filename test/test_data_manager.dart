@@ -3,6 +3,7 @@ import 'package:rxdart/rxdart.dart';
 
 import 'test_classes/failures.dart';
 import 'test_classes/usecases/get_user_usecase.dart';
+import 'test_classes/usecases/get_users_ages.dart';
 import 'test_classes/usecases/update_user_usecase.dart';
 import 'test_classes/user_data_manager.dart';
 import 'test_classes/user_model.dart';
@@ -54,6 +55,18 @@ void main() {
       }));
 
       userManager.updateUser(null);
+      await userManager.waitDone;
+    });
+
+    test('Should map using map function', () async {
+      expect(
+          userManager.stream.map(User.age.get),
+          emitsInOrder([
+            INITIAL_AGE,
+            UPDATED_AGE,
+          ]));
+
+      userManager.getUsersAges();
       await userManager.waitDone;
     });
 
