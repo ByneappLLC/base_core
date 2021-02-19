@@ -30,6 +30,13 @@ class ActivityIndicator extends Stream<bool> implements ValueStream<bool> {
 
   @override
   bool get hasValue => _loadingCounter.hasValue;
+
+  @override
+  ErrorAndStackTrace get errorAndStackTrace =>
+      _loadingCounter.errorAndStackTrace;
+
+  @override
+  bool get hasError => _loadingCounter.hasError;
 }
 
 class _ActivityIndicatorTransformer<T> extends StreamTransformerBase<T, T> {
