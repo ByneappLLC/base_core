@@ -6,16 +6,16 @@ import 'package:rxdart/subjects.dart';
 class ActivityIndicator extends Stream<bool> implements ValueStream<bool> {
   final BehaviorSubject<int> _loadingCounter = BehaviorSubject.seeded(0);
 
-  @override
   bool get value => _loadingCounter.value > 0;
+
   Stream<bool> get stream => _loadingCounter.map((event) => event > 0);
 
   void _increment() {
-    _loadingCounter.value = _loadingCounter.value + 1;
+    _loadingCounter.add(_loadingCounter.value + 1);
   }
 
   void _decrement() {
-    _loadingCounter.value = _loadingCounter.value - 1;
+    _loadingCounter.add(_loadingCounter.value - 1);
   }
 
   void close() {
@@ -28,8 +28,15 @@ class ActivityIndicator extends Stream<bool> implements ValueStream<bool> {
       stream.listen(onData,
           onError: onError, onDone: onDone, cancelOnError: cancelOnError);
 
-  @override
   bool get hasValue => _loadingCounter.hasValue;
+
+  @override
+  ErrorAndStackTrace get errorAndStackTrace =>
+      _loadingCounter.errorAndStackTrace;
+
+  @override
+  ValueWrapper<bool> get valueWrapper =>
+      _loadingCounter.map((e) => e > 0).valueWrapper;
 }
 
 class _ActivityIndicatorTransformer<T> extends StreamTransformerBase<T, T> {
