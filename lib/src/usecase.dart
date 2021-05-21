@@ -7,7 +7,7 @@ import 'package:logging/logging.dart';
 
 abstract class UseCase<P, R> {
   @protected
-  Logger logger;
+  late Logger logger;
 
   UseCase() {
     logger = Logger(runtimeType.toString());
@@ -28,13 +28,13 @@ abstract class UseCase<P, R> {
 
 // A Usecase to be use inside a data manager
 abstract class DataManagerUseCase<P, R> extends UseCase<Tuple2<P, R>, R> {
-  Tuple2<P, R> _params;
+  Tuple2<P, R>? _params;
 
   @mustCallSuper
   params(Tuple2<P, R> params) {
     _params = params;
   }
 
-  P get param => _params.value1;
-  R get value => _params.value2;
+  P? get param => _params?.value1;
+  R? get value => _params?.value2;
 }

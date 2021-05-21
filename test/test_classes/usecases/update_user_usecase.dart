@@ -6,9 +6,9 @@ import '../user_model.dart';
 
 const FIXED_NAME = 'Anthony';
 
-class UpdateUserUseCase extends DataManagerUseCase<String, User> {
+class UpdateUserUseCase extends DataManagerUseCase<String?, User> {
   @override
-  Future<Either<Failure, User>> execute(Tuple2<String, User> params) async {
+  Future<Either<Failure, User>> execute(Tuple2<String?, User> params) async {
     super.params(params);
 
     if (param == null) {
@@ -21,6 +21,6 @@ class UpdateUserUseCase extends DataManagerUseCase<String, User> {
   }
 
   User updateUser() {
-    return User.name.set(value, param);
+    return User.name.set(value!, param!);
   }
 }

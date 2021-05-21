@@ -3,7 +3,7 @@ import 'package:logging/logging.dart';
 import 'package:rxdart/rxdart.dart';
 
 abstract class BaseState<T extends StatefulWidget> extends State<T> {
-  Logger logger;
+  late Logger logger;
   BaseState() {
     logger = Logger('${runtimeType.toString()}');
     logger.finest('init');
@@ -15,7 +15,6 @@ abstract class BaseState<T extends StatefulWidget> extends State<T> {
   void dispose() {
     logger.finest('dispose');
     compositeSubscription.dispose();
-    compositeSubscription = null;
     super.dispose();
   }
 }

@@ -11,15 +11,15 @@ class UserAge {
 
 const UPDATED_AGE = 22;
 
-class GetUserAges extends UseCase<String, List<UserAge>> {
-  static User mapToUser(User user, dynamic users) {
-    final currentUser = User.id.get(user);
+class GetUserAges extends UseCase<String?, List<UserAge>> {
+  static User mapToUser(User? user, dynamic users) {
+    final currentUser = User.id.get(user!);
     return User.age.set(user,
         (users as List<UserAge>).firstWhere((u) => u.id == currentUser).age);
   }
 
   @override
-  Future<Either<Failure, List<UserAge>>> execute(String params) async {
+  Future<Either<Failure, List<UserAge>>> execute(String? params) async {
     return right([
       UserAge(1, UPDATED_AGE),
       UserAge(2, 25),

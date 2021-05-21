@@ -14,7 +14,7 @@ typedef MapStreamFn<T> = Stream<T> Function(T);
 typedef UseCaseMapFn<D, P> = D Function(D, P);
 
 extension<T> on Stream<T> {
-  Stream<T> optionalAsyncMap(AsyncMapFn<T> fn) {
+  Stream<T> optionalAsyncMap(AsyncMapFn<T>? fn) {
     if (fn != null) {
       return this.asyncMap(fn);
     } else {
@@ -22,7 +22,7 @@ extension<T> on Stream<T> {
     }
   }
 
-  Stream<T> optionalMap(MapStreamFn<T> fn) {
+  Stream<T> optionalMap(MapStreamFn<T>? fn) {
     if (fn != null) {
       return this.switchMap(fn);
     } else {
@@ -30,7 +30,9 @@ extension<T> on Stream<T> {
     }
   }
 
-  Stream<T> optionallyNotifyListeners(ObserverList<DataListener<T>> listeners) {
+  Stream<T> optionallyNotifyListeners(
+    ObserverList<DataListener<T>>? listeners,
+  ) {
     if (listeners != null && listeners.isNotEmpty) {
       return this.doOnData((event) {
         listeners.forEach((fn) => fn(event));
@@ -44,10 +46,13 @@ extension<T> on Stream<T> {
 /// [D] data being managed
 abstract class DataManager<D> {
   @protected
-  Logger logger;
+  late Logger logger;
 
-  DataManager(this.useCases, {D initData, this.autoClearFns = true})
-      : rx = initData != null
+  DataManager(
+    this.useCases, {
+    D? initData,
+    this.autoClearFns = true,
+  }) : rx = initData != null
             ? BehaviorSubject<D>.seeded(initData)
             : BehaviorSubject<D>() {
     logger = Logger(runtimeType.toString());
@@ -57,21 +62,21 @@ abstract class DataManager<D> {
   final _onFailure = PublishSubject<Failure>();
   final _runUseCase = PublishSubject<
       Tuple2<Trampoline<Stream<Either<Failure, dynamic>>>,
-          UseCaseMapFn<D, dynamic>>>();
+          UseCaseMapFn<D, dynamic>?>>();
   final activityIndicator = ActivityIndicator();
   final onDone = PublishSubject();
 
   Future<void> get waitDone => onDone.first;
   ObserverList<DataListener<D>> _listeners = ObserverList<DataListener<D>>();
 
-  AsyncMapFn<D> asyncMapFn;
-  MapStreamFn<D> mapStreamFn;
+  AsyncMapFn<D>? asyncMapFn;
+  MapStreamFn<D>? mapStreamFn;
 
   final BehaviorSubject<D> rx;
   Stream<D> get stream => rx.stream;
   D get value => rx.value;
 
-  Map<Type, Tuple2<UseCase<dynamic, dynamic>, UseCaseMapFn<D, dynamic>>>
+  late Map<Type, Tuple2<UseCase<dynamic, dynamic>, UseCaseMapFn<D, dynamic>?>>
       useCases;
 
   Stream<bool> get isLoading => activityIndicator.stream;
@@ -81,9 +86,13 @@ abstract class DataManager<D> {
       .whereNotLoading(activityIndicator)
       .switchMap((t) => t.value1
           .run()
-          .map((e) => e.map((d) => d is D ? d : t?.value2?.call(value, d)))
+          .map((e) => e.map((d) => d is D ? d : t.value2!.call(value!, d)))
           .trackActivity(activityIndicator)
           .onFailureForwardTo(_onFailure)
+          .map((event) {
+            // Workaround - onFailureForwardTo signature returns a nullable, but that will never happen
+            return event!;
+          })
           .optionalAsyncMap(asyncMapFn)
           .optionalMap(mapStreamFn)
           .optionallyNotifyListeners(_listeners)
@@ -98,15 +107,15 @@ abstract class DataManager<D> {
     onDone.add(null);
   }
 
-  void runUseCase<U, P>([P params]) {
+  void runUseCase<U, P>([P? params]) {
     final tuple = useCases[U];
-    final useCase = tuple.value1;
+    final useCase = tuple!.value1;
     final mapFn = tuple.value2;
 
     Trampoline<Stream<Either<Failure, dynamic>>> runningUseCase;
 
     if (useCase is DataManagerUseCase) {
-      runningUseCase = useCase.tStream(tuple2<P, D>(params, value));
+      runningUseCase = useCase.tStream(tuple2<P?, D>(params, value));
     } else {
       runningUseCase = useCase.tStream(params);
     }
@@ -131,6 +140,5 @@ abstract class DataManager<D> {
     _onFailure.close();
     _runUseCase.close();
     activityIndicator.close();
-    _listeners = null;
   }
 }

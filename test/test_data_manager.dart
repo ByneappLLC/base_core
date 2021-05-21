@@ -30,8 +30,12 @@ void main() {
     });
 
     test('Should update name', () async {
-      expect(userManager.stream.map(User.name.get),
-          emitsInOrder([WRONG_NAME, FIXED_NAME]));
+      expect(
+        userManager.stream.map(User.name.get),
+        emitsInOrder(
+          [WRONG_NAME, FIXED_NAME],
+        ),
+      );
 
       userManager.updateUser(FIXED_NAME);
 

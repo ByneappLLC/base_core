@@ -6,7 +6,13 @@ class User {
 
   User(this._id, this._name, this._nickname, this._intro, this._age);
 
-  User _copy({int id, String name, String nickname, String intro, int age}) =>
+  User _copy({
+    int? id,
+    String? name,
+    String? nickname,
+    String? intro,
+    int? age,
+  }) =>
       User(
         id ?? this._id,
         name ?? this._name,

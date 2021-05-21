@@ -13,8 +13,8 @@ class UserDataManager extends DataManager<User> {
     runUseCase<GetUserUseCase, int>(3);
   }
 
-  updateUser(String name) {
-    runUseCase<UpdateUserUseCase, String>(name);
+  updateUser(String? name) {
+    runUseCase<UpdateUserUseCase, String?>(name);
   }
 
   getUsersAges() {

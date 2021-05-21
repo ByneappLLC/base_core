@@ -8,7 +8,7 @@ import 'package:rxdart/rxdart.dart';
 
 abstract class BaseBloc {
   @protected
-  Logger logger;
+  late Logger logger;
 
   BaseBloc() {
     logger = Logger(runtimeType.toString());
@@ -19,15 +19,12 @@ abstract class BaseBloc {
 
   void dispose() {
     logger.finest('dispose');
-    if (compositeSubscription != null) {
-      compositeSubscription.dispose();
-      compositeSubscription = null;
-    }
+    compositeSubscription.dispose();
   }
 }
 
 abstract class BaseState<T extends StatefulWidget> extends State<T> {
-  Logger logger;
+  late Logger logger;
   BaseState() {
     logger = Logger('${runtimeType.toString()}');
     logger.finest('init');
@@ -39,7 +36,6 @@ abstract class BaseState<T extends StatefulWidget> extends State<T> {
   void dispose() {
     logger.finest('dispose');
     compositeSubscription.dispose();
-    compositeSubscription = null;
     super.dispose();
   }
 }
@@ -48,7 +44,11 @@ class MultiBlocProvider extends StatelessWidget {
   final List<BlocProvider<dynamic>> blocs;
   final Widget child;
 
-  const MultiBlocProvider({Key key, this.blocs, this.child}) : super(key: key);
+  const MultiBlocProvider({
+    Key? key,
+    required this.blocs,
+    required this.child,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) => blocs.reversed.fold(
@@ -57,10 +57,10 @@ class MultiBlocProvider extends StatelessWidget {
 
 class BlocProvider<T extends BaseBloc> extends StatefulWidget {
   BlocProvider({
-    Key key,
-    this.child,
+    Key? key,
+    required this.child,
     this.shouldDispose = true,
-    @required this.bloc,
+    required this.bloc,
   }) : super(key: key);
 
   final Widget child;
@@ -70,11 +70,12 @@ class BlocProvider<T extends BaseBloc> extends StatefulWidget {
   @override
   _BlocProviderState<T> createState() => _BlocProviderState<T>();
 
-  static T of<T extends BaseBloc>(BuildContext context) {
+  static T? of<T extends BaseBloc>(BuildContext context) {
     _BlocProviderInherited<T> provider = context
         .getElementForInheritedWidgetOfExactType<_BlocProviderInherited<T>>()
-        ?.widget;
-    return provider?.bloc;
+        ?.widget as _BlocProviderInherited<T>;
+
+    return provider.bloc;
   }
 
   BlocProvider<T> copyWithChild(Widget child) {
@@ -90,7 +91,7 @@ class _BlocProviderState<T extends BaseBloc> extends State<BlocProvider<T>> {
   @override
   void dispose() {
     if (widget.shouldDispose) {
-      widget.bloc?.dispose();
+      widget.bloc.dispose();
     }
     super.dispose();
   }
@@ -106,23 +107,24 @@ class _BlocProviderState<T extends BaseBloc> extends State<BlocProvider<T>> {
 
 class _BlocProviderInherited<T> extends InheritedWidget {
   _BlocProviderInherited({
-    Key key,
-    @required Widget child,
-    @required this.bloc,
+    Key? key,
+    required Widget child,
+    required this.bloc,
   }) : super(key: key, child: child);
 
-  final T bloc;
+  final T? bloc;
 
   @override
   bool updateShouldNotify(_BlocProviderInherited oldWidget) => false;
 }
 
 extension ForwardFailure<T> on Stream<Either<Failure, T>> {
-  Stream<T> onFailureForwardTo(StreamSink<Failure> failureSink) {
+  Stream<T?> onFailureForwardTo(StreamSink<Failure> failureSink) {
     return doOnData((event) {
       event.leftMap(failureSink.add);
     })
         .where((event) => event.isRight())
-        .map((event) => event.fold(null, (data) => data));
+        // Workaround, basically returning null will never happen as we only take isRight() events
+        .map((event) => event.fold((f) => null, (r) => r));
   }
 }

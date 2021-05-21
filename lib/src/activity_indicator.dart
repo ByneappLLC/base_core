@@ -23,20 +23,41 @@ class ActivityIndicator extends Stream<bool> implements ValueStream<bool> {
   }
 
   @override
-  StreamSubscription<bool> listen(void Function(bool event) onData,
-          {Function onError, void Function() onDone, bool cancelOnError}) =>
-      stream.listen(onData,
-          onError: onError, onDone: onDone, cancelOnError: cancelOnError);
+  StreamSubscription<bool> listen(
+    void Function(bool event)? onData, {
+    Function? onError,
+    void Function()? onDone,
+    bool? cancelOnError,
+  }) =>
+      stream.listen(
+        onData,
+        onError: onError,
+        onDone: onDone,
+        cancelOnError: cancelOnError,
+      );
 
   bool get hasValue => _loadingCounter.hasValue;
 
   @override
-  ErrorAndStackTrace get errorAndStackTrace =>
-      _loadingCounter.errorAndStackTrace;
+  Object get error => _loadingCounter.error;
 
   @override
-  ValueWrapper<bool> get valueWrapper =>
-      _loadingCounter.map((e) => e > 0).valueWrapper;
+  Object? get errorOrNull => _loadingCounter.errorOrNull;
+
+  @override
+  bool get hasError => _loadingCounter.hasError;
+
+  @override
+  StackTrace? get stackTrace => _loadingCounter.stackTrace;
+
+  @override
+  bool? get valueOrNull {
+    if (_loadingCounter.valueOrNull != null) {
+      return _loadingCounter.value > 0;
+    } else {
+      return null;
+    }
+  }
 }
 
 class _ActivityIndicatorTransformer<T> extends StreamTransformerBase<T, T> {
