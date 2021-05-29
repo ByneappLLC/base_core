@@ -41,8 +41,9 @@ abstract class BaseState<T extends StatefulWidget> extends State<T> {
 }
 
 class MultiBlocProvider extends StatelessWidget {
-  final List<BlocProvider<dynamic>> blocs;
   final Widget child;
+
+  final List<SingleBlocProvider<dynamic>> blocs;
 
   const MultiBlocProvider({
     Key? key,
@@ -52,7 +53,22 @@ class MultiBlocProvider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => blocs.reversed.fold(
-      child, (previousValue, element) => element.copyWithChild(previousValue));
+        child,
+        (previousValue, element) => element.makeBlocProvider(previousValue),
+      );
+}
+
+class SingleBlocProvider<T extends BaseBloc> {
+  final T bloc;
+
+  SingleBlocProvider(this.bloc);
+
+  BlocProvider<T> makeBlocProvider(Widget child) {
+    return BlocProvider<T>(
+      bloc: bloc,
+      child: child,
+    );
+  }
 }
 
 class BlocProvider<T extends BaseBloc> extends StatefulWidget {
