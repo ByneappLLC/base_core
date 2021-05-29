@@ -1,5 +1,5 @@
 typedef _Fn<R> = R Function();
-typedef _Cond<T> = bool Function(T t)?;
+typedef _Cond<T> = bool Function(T t);
 
 class _Matcher<T, R> {
   final T _t;
@@ -21,8 +21,8 @@ class _Matcher<T, R> {
 
   R run() {
     final entry = _m.entries.firstWhere(
-      (e) => e.key!(_t),
-      orElse: () => MapEntry(null, _default),
+      (e) => e.key(_t),
+      orElse: () => MapEntry((_) => true, _default),
     );
 
     return entry.value();
