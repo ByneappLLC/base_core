@@ -4,11 +4,7 @@ import 'package:rxdart/rxdart.dart';
 import 'package:rxdart/subjects.dart';
 
 class ActivityIndicator extends Stream<bool> implements ValueStream<bool> {
-  final bool handleWithOnData;
-
   final BehaviorSubject<int> _loadingCounter = BehaviorSubject.seeded(0);
-
-  ActivityIndicator({this.handleWithOnData = false});
 
   bool get value => _loadingCounter.value > 0;
 
@@ -68,19 +64,12 @@ class _ActivityIndicatorTransformer<T> extends StreamTransformerBase<T, T> {
   final StreamTransformer<T, T> _transformer;
 
   _ActivityIndicatorTransformer(ActivityIndicator indicator)
-      : _transformer = indicator.handleWithOnData
-            ? StreamTransformer.fromHandlers(
-                handleData: (_, sink) {
-                  indicator._decrement();
-                  //sink.close();
-                },
-              )
-            : StreamTransformer.fromHandlers(
-                handleDone: (sink) {
-                  indicator._decrement();
-                  sink.close();
-                },
-              );
+      : _transformer = StreamTransformer.fromHandlers(
+          handleDone: (sink) {
+            indicator._decrement();
+            sink.close();
+          },
+        );
 
   @override
   Stream<T> bind(Stream<T> stream) => _transformer.bind(stream);
