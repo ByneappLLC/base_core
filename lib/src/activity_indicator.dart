@@ -72,7 +72,7 @@ class _ActivityIndicatorTransformer<T> extends StreamTransformerBase<T, T> {
             ? StreamTransformer.fromHandlers(
                 handleData: (_, sink) {
                   indicator._decrement();
-                  sink.close();
+                  //sink.close();
                 },
               )
             : StreamTransformer.fromHandlers(
