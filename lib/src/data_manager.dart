@@ -11,8 +11,10 @@ typedef DataListener<T> = void Function(T);
 typedef AsyncMapFn<T> = FutureOr<T> Function(T);
 typedef MapStreamFn<T> = Stream<T> Function(T);
 
+typedef UseCaseMapFn<D, P> = D Function(D, P);
+
 extension<T> on Stream<T> {
-  Stream<T> optionalAsyncMap(AsyncMapFn<T> fn) {
+  Stream<T> optionalAsyncMap(AsyncMapFn<T>? fn) {
     if (fn != null) {
       return this.asyncMap(fn);
     } else {
@@ -20,7 +22,7 @@ extension<T> on Stream<T> {
     }
   }
 
-  Stream<T> optionalMap(MapStreamFn<T> fn) {
+  Stream<T> optionalMap(MapStreamFn<T>? fn) {
     if (fn != null) {
       return this.switchMap(fn);
     } else {
@@ -28,7 +30,9 @@ extension<T> on Stream<T> {
     }
   }
 
-  Stream<T> optionallyNotifyListeners(ObserverList<DataListener<T>> listeners) {
+  Stream<T> optionallyNotifyListeners(
+    ObserverList<DataListener<T>>? listeners,
+  ) {
     if (listeners != null && listeners.isNotEmpty) {
       return this.doOnData((event) {
         listeners.forEach((fn) => fn(event));
@@ -42,10 +46,13 @@ extension<T> on Stream<T> {
 /// [D] data being managed
 abstract class DataManager<D> {
   @protected
-  Logger logger;
+  late Logger logger;
 
-  DataManager(this.useCases, {D initData, this.autoClearFns = true})
-      : rx = initData != null
+  DataManager(
+    this.useCases, {
+    D? initData,
+    this.autoClearFns = true,
+  }) : rx = initData != null
             ? BehaviorSubject<D>.seeded(initData)
             : BehaviorSubject<D>() {
     logger = Logger(runtimeType.toString());
@@ -53,31 +60,39 @@ abstract class DataManager<D> {
 
   final bool autoClearFns;
   final _onFailure = PublishSubject<Failure>();
-  final _runUseCase = PublishSubject<Trampoline<Stream<Either<Failure, D>>>>();
+  final _runUseCase = PublishSubject<
+      Tuple2<Trampoline<Stream<Either<Failure, dynamic>>>,
+          UseCaseMapFn<D, dynamic>?>>();
   final activityIndicator = ActivityIndicator();
   final onDone = PublishSubject();
 
   Future<void> get waitDone => onDone.first;
   ObserverList<DataListener<D>> _listeners = ObserverList<DataListener<D>>();
 
-  AsyncMapFn<D> asyncMapFn;
-  MapStreamFn<D> mapStreamFn;
+  AsyncMapFn<D>? asyncMapFn;
+  MapStreamFn<D>? mapStreamFn;
 
   final BehaviorSubject<D> rx;
   Stream<D> get stream => rx.stream;
   D get value => rx.value;
 
-  final Iterable<UseCase<dynamic, D>> useCases;
+  late Map<Type, Tuple2<UseCase<dynamic, dynamic>, UseCaseMapFn<D, dynamic>?>>
+      useCases;
 
   Stream<bool> get isLoading => activityIndicator.stream;
   Stream<Failure> get onFailure => _onFailure.stream;
 
   StreamSubscription get subscriber => _runUseCase
       .whereNotLoading(activityIndicator)
-      .switchMap((useCase) => useCase
+      .switchMap((t) => t.value1
           .run()
+          .map((e) => e.map((d) => d is D ? d : t.value2!.call(value!, d)))
           .trackActivity(activityIndicator)
           .onFailureForwardTo(_onFailure)
+          .map((event) {
+            // Workaround - onFailureForwardTo signature returns a nullable, but that will never happen
+            return event!;
+          })
           .optionalAsyncMap(asyncMapFn)
           .optionalMap(mapStreamFn)
           .optionallyNotifyListeners(_listeners)
@@ -92,16 +107,19 @@ abstract class DataManager<D> {
     onDone.add(null);
   }
 
-  void runUseCase<U, P>([P params]) {
-    final useCase = useCases.firstWhere((u) => u.runtimeType == U);
+  void runUseCase<U, P>([P? params]) {
+    final tuple = useCases[U];
+    final useCase = tuple!.value1;
+    final mapFn = tuple.value2;
 
-    Trampoline<Stream<Either<Failure, D>>> runningUseCase;
+    Trampoline<Stream<Either<Failure, dynamic>>> runningUseCase;
+
     if (useCase is DataManagerUseCase) {
-      runningUseCase = useCase.tStream(tuple2<P, D>(params, value));
+      runningUseCase = useCase.tStream(tuple2<P?, D>(params, value));
     } else {
       runningUseCase = useCase.tStream(params);
     }
-    _runUseCase.add(runningUseCase);
+    _runUseCase.add(tuple2(runningUseCase, mapFn));
   }
 
   void update(D data) {
@@ -122,6 +140,5 @@ abstract class DataManager<D> {
     _onFailure.close();
     _runUseCase.close();
     activityIndicator.close();
-    _listeners = null;
   }
 }

@@ -1,80 +1,17 @@
-import 'package:base_core/base_core.dart';
-import 'package:base_core/src/data_manager.dart';
-import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rxdart/rxdart.dart';
 
-class User {
-  final String name;
-  final String age;
-
-  User(this.name, this.age);
-}
-
-class NotFound extends Failure {}
-
-class GetUserUseCase extends UseCase<int, User> {
-  @override
-  Future<Either<Failure, User>> execute(int params) async {
-    if (params == null) {
-      return left(NotFound());
-    } else {
-      final res = await Future.delayed(
-          Duration(milliseconds: 500), () => User('name', 'age'));
-
-      return right(res);
-    }
-  }
-}
-
-class UpdateUserUseCase extends DataManagerUseCase<String, User> {
-  @override
-  Future<Either<Failure, User>> execute(Tuple2<String, User> params) async {
-    super.params(params);
-
-    final res = await Future.delayed(Duration(milliseconds: 500), updateUser);
-
-    return right(res);
-  }
-
-  User updateUser() {
-    return User(param, '11');
-  }
-}
-
-class UserDataManager extends DataManager<User> {
-  UserDataManager() : super([GetUserUseCase(), UpdateUserUseCase()]);
-
-  getUser() {
-    runUseCase<GetUserUseCase, int>(3);
-  }
-
-  updateUser() {
-    runUseCase<UpdateUserUseCase, String>('fredo');
-  }
-
-  throwError() {
-    runUseCase<GetUserUseCase, int>(null);
-  }
-
-  getUserWithModification() {
-    asyncMapFn = (user) async {
-      final newUser = User('New User', '100');
-      return await Future.delayed(Duration(milliseconds: 100), () => newUser);
-    };
-
-    runUseCase<GetUserUseCase, int>(3);
-  }
-
-  @override
-  void close() {
-    super.close();
-  }
-}
+import 'test_classes/failures.dart';
+import 'test_classes/usecases/get_user_usecase.dart';
+import 'test_classes/usecases/get_users_ages.dart';
+import 'test_classes/usecases/update_user_usecase.dart';
+import 'test_classes/user_data_manager.dart';
+import 'test_classes/user_model.dart';
+import 'test_classes/user_usecase_generator.dart';
 
 void main() {
   final subscription = CompositeSubscription();
-  final userManager = UserDataManager();
+  final userManager = UserDataManager(UserUseCaseGenerator());
 
   group('Test DataManager', () {
     setUp(() {
@@ -84,7 +21,6 @@ void main() {
     test('Should emit expected data', () async {
       final subscription = userManager.stream.listen(expectAsync1((event) {
         expect(event.runtimeType, User);
-        expect(event.name, 'name');
       }));
 
       userManager.getUser();
@@ -93,12 +29,15 @@ void main() {
       subscription.cancel();
     });
 
-    test('Should emait failure', () async {
-      userManager.onFailure.listen(expectAsync1((event) {
-        expect(event.runtimeType, NotFound);
-      }));
+    test('Should update name', () async {
+      expect(
+        userManager.stream.map(User.name.get),
+        emitsInOrder(
+          [WRONG_NAME, FIXED_NAME],
+        ),
+      );
 
-      userManager.throwError();
+      userManager.updateUser(FIXED_NAME);
 
       await userManager.waitDone;
     });
@@ -114,33 +53,24 @@ void main() {
       await userManager.waitDone;
     });
 
-    test('Should update name with update function', () async {
-      final nameSteam = userManager.stream.map((event) => event.name);
+    test('Should emit failure', () async {
+      userManager.onFailure.listen(expectAsync1((event) {
+        expect(event.runtimeType, NotFound);
+      }));
 
-      expect(nameSteam, emitsInOrder(['name', 'fredo']));
-
-      userManager.updateUser();
+      userManager.updateUser(null);
       await userManager.waitDone;
     });
 
-    test(
-        'Should run the AsyncMap to modify age, and automatically clear the fn',
-        () async {
-      final ageStream = userManager.stream.map((event) => event.age);
+    test('Should map using map function', () async {
+      expect(
+          userManager.stream.map(User.age.get),
+          emitsInOrder([
+            INITIAL_AGE,
+            UPDATED_AGE,
+          ]));
 
-      expect(ageStream, emitsInOrder(['11', '100']));
-
-      userManager.getUserWithModification();
-
-      await userManager.waitDone;
-    });
-
-    test('Should and automatically clear the fn', () async {
-      final ageStream = userManager.stream.map((event) => event.age);
-
-      expect(ageStream, emitsInOrder(['100', 'age']));
-      userManager.getUser();
-
+      userManager.getUsersAges();
       await userManager.waitDone;
     });
 
