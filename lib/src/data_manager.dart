@@ -75,6 +75,7 @@ abstract class DataManager<D> {
   final BehaviorSubject<D> rx;
   Stream<D> get stream => rx.stream;
   D get value => rx.value;
+  D? get valueOrNull => rx.valueOrNull;
 
   late Map<Type, Tuple2<UseCase<dynamic, dynamic>, UseCaseMapFn<D, dynamic>?>>
       useCases;
