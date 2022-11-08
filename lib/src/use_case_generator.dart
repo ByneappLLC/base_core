@@ -7,13 +7,13 @@ abstract class UseCaseGenerator<D> {
   Map<Type, Tuple2<UseCase<dynamic, dynamic>, UseCaseMapFn<D, dynamic>?>>
       useCases = {};
 
-  addUseCase(UseCase<dynamic, dynamic> useCase) {
+  void addUseCase(UseCase<dynamic, dynamic> useCase) {
     final tuple = tuple2(useCase, null);
 
     useCases.putIfAbsent(useCase.runtimeType, () => tuple);
   }
 
-  addUseCaseWithMapFn<UP>(
+  void addUseCaseWithMapFn<UP>(
     UseCase<dynamic, dynamic> useCase,
     UseCaseMapFn<D, dynamic> mapFn,
   ) {

@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:base_core/base_core.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -90,10 +89,6 @@ abstract class DataManager<D> {
           .map((e) => e.map((d) => d is D ? d : t.value2!.call(value!, d)))
           .trackActivity(activityIndicator)
           .onFailureForwardTo(_onFailure)
-          .map((event) {
-            // Workaround - onFailureForwardTo signature returns a nullable, but that will never happen
-            return event!;
-          })
           .optionalAsyncMap(asyncMapFn)
           .optionalMap(mapStreamFn)
           .optionallyNotifyListeners(_listeners)

@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:rxdart/rxdart.dart';
-import 'package:rxdart/subjects.dart';
 
 class ActivityIndicator extends Stream<bool> implements ValueStream<bool> {
   final BehaviorSubject<int> _loadingCounter = BehaviorSubject.seeded(0);

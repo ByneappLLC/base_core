@@ -135,12 +135,12 @@ class _BlocProviderInherited<T> extends InheritedWidget {
 }
 
 extension ForwardFailure<T> on Stream<Either<Failure, T>> {
-  Stream<T?> onFailureForwardTo(StreamSink<Failure> failureSink) {
+  Stream<T> onFailureForwardTo(StreamSink<Failure> failureSink) {
     return doOnData((event) {
       event.leftMap(failureSink.add);
     })
         .where((event) => event.isRight())
         // Workaround, basically returning null will never happen as we only take isRight() events
-        .map((event) => event.fold((f) => null, (r) => r));
+        .map((event) => event.fold((f) => null, (r) => r)!);
   }
 }
