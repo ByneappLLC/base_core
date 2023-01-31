@@ -1,3 +1,4 @@
+import 'package:base_core/base_core.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -13,9 +14,11 @@ void main() {
   final subscription = CompositeSubscription();
   final userManager = UserDataManager(UserUseCaseGenerator());
 
+  BaseCoreLogger.initLogging();
+
   group('Test DataManager', () {
     setUp(() {
-      userManager.registerSubcription(subscription);
+      userManager.registerSubscription(subscription);
     });
 
     test('Should emit expected data', () async {
@@ -54,12 +57,13 @@ void main() {
     });
 
     test('Should emit failure', () async {
-      userManager.onFailure.listen(expectAsync1((event) {
+      final s = userManager.onFailure.listen(expectAsync1((event) {
         expect(event.runtimeType, NotFound);
       }));
 
       userManager.updateUser(null);
       await userManager.waitDone;
+      await s.cancel();
     });
 
     test('Should map using map function', () async {
@@ -72,6 +76,22 @@ void main() {
 
       userManager.getUsersAges();
       await userManager.waitDone;
+    });
+
+    test('Should stream user age', () async {
+      userManager.rx.listen((value) {
+        final age = User.age.get(value);
+
+        print(age);
+      });
+
+      userManager.registerAgeStream();
+      await Future.delayed(Duration(seconds: 2));
+
+      userManager.deRegisterAgeStream();
+      await Future.delayed(Duration(seconds: 2));
+      userManager.registerAgeStream();
+      await Future.delayed(Duration(seconds: 20));
     });
 
     tearDown(() {

@@ -11,6 +11,7 @@ typedef AsyncMapFn<T> = FutureOr<T> Function(T);
 typedef MapStreamFn<T> = Stream<T> Function(T);
 
 typedef UseCaseMapFn<D, P> = D Function(D, P);
+typedef StreamingUseCaseMapFn<D, P> = D Function(D, P);
 
 extension<T> on Stream<T> {
   Stream<T> optionalAsyncMap(AsyncMapFn<T>? fn) {
@@ -74,7 +75,7 @@ abstract class DataManager<D> {
   AsyncMapFn<D>? asyncMapFn;
   MapStreamFn<D>? mapStreamFn;
 
-  void registerSubcription(CompositeSubscription subscription) {
+  void registerSubscription(CompositeSubscription subscription) {
     compositeSubscription = subscription;
     subscriber.addTo(compositeSubscription);
   }
@@ -130,17 +131,40 @@ abstract class DataManager<D> {
     _runUseCase.add(tuple2(runningUseCase, mapFn));
   }
 
+  final Map<StreamingUseCase, StreamSubscription<D>> runningUseCaseStreams = {};
+
   void registerStreamingUseCase<U, P>([P? params]) {
     final tuple = streamingUseCases[U];
 
     final useCase = tuple!.value1;
     final mapFn = tuple.value2;
 
-    useCase(params)
+    if (runningUseCaseStreams.containsKey(useCase)) {
+      logger.fine('Cannot register same stream twice');
+      return;
+    }
+
+    final ss = useCase(useCase is DataManagerStreamingUseCase
+            ? tuple2<P?, BehaviorSubject<D>>(params, rx)
+            : params)
         .onFailureForwardTo(_onFailure)
         .map((d) => d is D ? d : mapFn!.call(value, d))
-        .listen(update)
-        .addTo(compositeSubscription);
+        .listen(update);
+
+    compositeSubscription.add(ss);
+    runningUseCaseStreams.putIfAbsent(useCase, () => ss);
+  }
+
+  void deRegisterUseCase<U>() {
+    final tuple = streamingUseCases[U];
+    final useCase = tuple!.value1;
+
+    final ss = runningUseCaseStreams[useCase];
+
+    if (ss != null) {
+      compositeSubscription.remove(ss);
+      runningUseCaseStreams.remove(useCase);
+    }
   }
 
   void update(D data) {
