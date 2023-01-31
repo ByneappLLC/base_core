@@ -7,7 +7,7 @@ import 'user_model.dart';
 import 'user_usecase_generator.dart';
 
 class UserDataManager extends DataManager<User> {
-  UserDataManager(UserUseCaseGenerator generated) : super(generated.useCases);
+  UserDataManager(UserUseCaseGenerator generated) : super(generated);
 
   getUser() {
     runUseCase<GetUserUseCase, int>(3);

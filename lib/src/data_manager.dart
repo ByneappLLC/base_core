@@ -48,12 +48,14 @@ abstract class DataManager<D> {
   late Logger logger;
 
   DataManager(
-    this.useCases, {
+    UseCaseGenerator<D> useCaseGen, {
     D? initData,
     this.autoClearFns = true,
-  }) : rx = initData != null
+  })  : rx = initData != null
             ? BehaviorSubject<D>.seeded(initData)
-            : BehaviorSubject<D>() {
+            : BehaviorSubject<D>(),
+        useCases = useCaseGen.useCases,
+        streamingUseCases = useCaseGen.streamingUseCases {
     logger = Logger(runtimeType.toString());
   }
 
@@ -76,8 +78,12 @@ abstract class DataManager<D> {
   D get value => rx.value;
   D? get valueOrNull => rx.valueOrNull;
 
-  late Map<Type, Tuple2<UseCase<dynamic, dynamic>, UseCaseMapFn<D, dynamic>?>>
+  final Map<Type, Tuple2<UseCase<dynamic, dynamic>, UseCaseMapFn<D, dynamic>?>>
       useCases;
+
+  final Map<Type,
+          Tuple2<StreamingUseCase<dynamic, dynamic>, UseCaseMapFn<D, dynamic>?>>
+      streamingUseCases;
 
   Stream<bool> get isLoading => activityIndicator.stream;
   Stream<Failure> get onFailure => _onFailure.stream;
