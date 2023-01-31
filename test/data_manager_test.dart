@@ -15,7 +15,7 @@ void main() {
 
   group('Test DataManager', () {
     setUp(() {
-      subscription.add(userManager.subscriber);
+      userManager.registerSubcription(subscription);
     });
 
     test('Should emit expected data', () async {

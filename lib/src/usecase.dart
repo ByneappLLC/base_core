@@ -14,7 +14,7 @@ abstract class StreamingUseCase<P, R> {
     logger = Logger(runtimeType.toString());
   }
 
-  Stream<Either<Failure, R>> onError(Object object, StackTrace stackTrace);
+  Either<Failure, R> onError(Object object, StackTrace stackTrace);
 
   Stream<Either<Failure, R>> call(P param) => run(param).doOnError(onError);
 

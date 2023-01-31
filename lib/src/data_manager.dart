@@ -66,12 +66,18 @@ abstract class DataManager<D> {
           UseCaseMapFn<D, dynamic>?>>();
   final activityIndicator = ActivityIndicator();
   final onDone = PublishSubject();
+  late CompositeSubscription compositeSubscription;
 
   Future<void> get waitDone => onDone.first;
   ObserverList<DataListener<D>> _listeners = ObserverList<DataListener<D>>();
 
   AsyncMapFn<D>? asyncMapFn;
   MapStreamFn<D>? mapStreamFn;
+
+  void registerSubcription(CompositeSubscription subscription) {
+    compositeSubscription = subscription;
+    subscriber.addTo(compositeSubscription);
+  }
 
   final BehaviorSubject<D> rx;
   Stream<D> get stream => rx.stream;
@@ -122,6 +128,19 @@ abstract class DataManager<D> {
       runningUseCase = useCase.tStream(params);
     }
     _runUseCase.add(tuple2(runningUseCase, mapFn));
+  }
+
+  void registerStreamingUseCase<U, P>([P? params]) {
+    final tuple = streamingUseCases[U];
+
+    final useCase = tuple!.value1;
+    final mapFn = tuple.value2;
+
+    useCase(params)
+        .onFailureForwardTo(_onFailure)
+        .map((d) => d is D ? d : mapFn!.call(value, d))
+        .listen(update)
+        .addTo(compositeSubscription);
   }
 
   void update(D data) {
