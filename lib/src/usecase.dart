@@ -28,13 +28,13 @@ abstract class UseCase<P, R> {
 
 // A Usecase to be use inside a data manager
 @mustCallSuper
-abstract class DataManagerUseCase<P, R> extends UseCase<Tuple2<P, R>, R> {
-  late Tuple2<P, R> _params;
+abstract class DataManagerUseCase<P, R> extends UseCase<Tuple2<P?, R>, R> {
+  late Tuple2<P?, R> _params;
 
-  void params(Tuple2<P, R> params) {
+  void params(Tuple2<P?, R> params) {
     _params = params;
   }
 
-  P get param => _params.value1;
+  P? get param => _params.value1;
   R get value => _params.value2;
 }
