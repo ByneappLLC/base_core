@@ -11,6 +11,7 @@ typedef AsyncMapFn<T> = FutureOr<T> Function(T);
 typedef MapStreamFn<T> = Stream<T> Function(T);
 
 typedef UseCaseMapFn<D, P> = D Function(D, P);
+typedef StreamingUseCaseMapFn<D, P> = D Function(D, P);
 
 extension<T> on Stream<T> {
   Stream<T> optionalAsyncMap(AsyncMapFn<T>? fn) {
@@ -48,12 +49,14 @@ abstract class DataManager<D> {
   late Logger logger;
 
   DataManager(
-    this.useCases, {
+    UseCaseGenerator<D> useCaseGen, {
     D? initData,
     this.autoClearFns = true,
-  }) : rx = initData != null
+  })  : rx = initData != null
             ? BehaviorSubject<D>.seeded(initData)
-            : BehaviorSubject<D>() {
+            : BehaviorSubject<D>(),
+        useCases = useCaseGen.useCases,
+        streamingUseCases = useCaseGen.streamingUseCases {
     logger = Logger(runtimeType.toString());
   }
 
@@ -64,6 +67,7 @@ abstract class DataManager<D> {
           UseCaseMapFn<D, dynamic>?>>();
   final activityIndicator = ActivityIndicator();
   final onDone = PublishSubject();
+  late CompositeSubscription compositeSubscription;
 
   Future<void> get waitDone => onDone.first;
   ObserverList<DataListener<D>> _listeners = ObserverList<DataListener<D>>();
@@ -71,13 +75,22 @@ abstract class DataManager<D> {
   AsyncMapFn<D>? asyncMapFn;
   MapStreamFn<D>? mapStreamFn;
 
+  void registerSubscription(CompositeSubscription subscription) {
+    compositeSubscription = subscription;
+    subscriber.addTo(compositeSubscription);
+  }
+
   final BehaviorSubject<D> rx;
   Stream<D> get stream => rx.stream;
   D get value => rx.value;
   D? get valueOrNull => rx.valueOrNull;
 
-  late Map<Type, Tuple2<UseCase<dynamic, dynamic>, UseCaseMapFn<D, dynamic>?>>
+  final Map<Type, Tuple2<UseCase<dynamic, dynamic>, UseCaseMapFn<D, dynamic>?>>
       useCases;
+
+  final Map<Type,
+          Tuple2<StreamingUseCase<dynamic, dynamic>, UseCaseMapFn<D, dynamic>?>>
+      streamingUseCases;
 
   Stream<bool> get isLoading => activityIndicator.stream;
   Stream<Failure> get onFailure => _onFailure.stream;
@@ -116,6 +129,42 @@ abstract class DataManager<D> {
       runningUseCase = useCase.tStream(params);
     }
     _runUseCase.add(tuple2(runningUseCase, mapFn));
+  }
+
+  final Map<StreamingUseCase, StreamSubscription<D>> runningUseCaseStreams = {};
+
+  void registerStreamingUseCase<U, P>([P? params]) {
+    final tuple = streamingUseCases[U];
+
+    final useCase = tuple!.value1;
+    final mapFn = tuple.value2;
+
+    if (runningUseCaseStreams.containsKey(useCase)) {
+      logger.fine('Cannot register same stream twice');
+      return;
+    }
+
+    final ss = useCase(useCase is DataManagerStreamingUseCase
+            ? tuple2<P?, BehaviorSubject<D>>(params, rx)
+            : params)
+        .onFailureForwardTo(_onFailure)
+        .map((d) => d is D ? d : mapFn!.call(value, d))
+        .listen(update);
+
+    compositeSubscription.add(ss);
+    runningUseCaseStreams.putIfAbsent(useCase, () => ss);
+  }
+
+  void deRegisterUseCase<U>() {
+    final tuple = streamingUseCases[U];
+    final useCase = tuple!.value1;
+
+    final ss = runningUseCaseStreams[useCase];
+
+    if (ss != null) {
+      compositeSubscription.remove(ss);
+      runningUseCaseStreams.remove(useCase);
+    }
   }
 
   void update(D data) {
