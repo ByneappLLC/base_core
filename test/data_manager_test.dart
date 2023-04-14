@@ -5,6 +5,7 @@ import 'package:rxdart/rxdart.dart';
 import 'test_classes/failures.dart';
 import 'test_classes/usecases/get_user_usecase.dart';
 import 'test_classes/usecases/get_users_ages.dart';
+import 'test_classes/usecases/stream_user_age_usecase.dart';
 import 'test_classes/usecases/update_user_usecase.dart';
 import 'test_classes/user_data_manager.dart';
 import 'test_classes/user_model.dart';
@@ -79,19 +80,24 @@ void main() {
     });
 
     test('Should stream user age', () async {
-      userManager.rx.listen((value) {
-        final age = User.age.get(value);
+      final params = TestingStreamUserAgeUseCaseParams(500);
+      final numberOfEmits = 4;
 
-        print(age);
+      final currentAge = User.age.get(userManager.value);
+
+      final emittingItems = List.generate(numberOfEmits + 1, (index) {
+        if (index == 0) {
+          return currentAge;
+        } else {
+          return currentAge + index;
+        }
       });
 
-      userManager.registerAgeStream();
-      await Future.delayed(Duration(seconds: 2));
+      expect(userManager.stream.map(User.age.get), emitsInOrder(emittingItems));
 
-      userManager.deRegisterAgeStream();
-      await Future.delayed(Duration(seconds: 2));
-      userManager.registerAgeStream();
-      await Future.delayed(Duration(seconds: 20));
+      userManager.registerAgeStream(params);
+      await Future.delayed(
+          Duration(milliseconds: params.milliseconds * numberOfEmits));
     });
 
     tearDown(() {

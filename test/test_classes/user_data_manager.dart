@@ -10,20 +10,21 @@ import 'user_usecase_generator.dart';
 class UserDataManager extends DataManager<User> {
   UserDataManager(UserUseCaseGenerator generated) : super(generated);
 
-  getUser() {
+  void getUser() {
     runUseCase<GetUserUseCase, int>(3);
   }
 
-  updateUser(String? name) {
+  void updateUser(String? name) {
     runUseCase<UpdateUserUseCase, String?>(name);
   }
 
-  getUsersAges() {
+  void getUsersAges() {
     runUseCase<GetUserAges, void>(null);
   }
 
-  void registerAgeStream() {
-    registerStreamingUseCase<StreamUserAgeUseCase, int>(1);
+  void registerAgeStream(TestingStreamUserAgeUseCaseParams params) {
+    registerStreamingUseCase<StreamUserAgeUseCase,
+        TestingStreamUserAgeUseCaseParams>(params);
   }
 
   void deRegisterAgeStream() {

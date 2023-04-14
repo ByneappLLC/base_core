@@ -116,7 +116,7 @@ abstract class DataManager<D> {
     onDone.add(null);
   }
 
-  void runUseCase<U, P>([P? params]) {
+  void runUseCase<U, P>(P params) {
     final tuple = useCases[U];
     final useCase = tuple!.value1;
     final mapFn = tuple.value2;
@@ -124,7 +124,7 @@ abstract class DataManager<D> {
     Trampoline<Stream<Either<Failure, dynamic>>> runningUseCase;
 
     if (useCase is DataManagerUseCase) {
-      runningUseCase = useCase.tStream(tuple2<P?, D>(params, value));
+      runningUseCase = useCase.tStream(tuple2<P, D>(params, value));
     } else {
       runningUseCase = useCase.tStream(params);
     }
@@ -133,7 +133,7 @@ abstract class DataManager<D> {
 
   final Map<StreamingUseCase, StreamSubscription<D>> runningUseCaseStreams = {};
 
-  void registerStreamingUseCase<U, P>([P? params]) {
+  void registerStreamingUseCase<U, P>(P params) {
     final tuple = streamingUseCases[U];
 
     final useCase = tuple!.value1;
@@ -145,7 +145,7 @@ abstract class DataManager<D> {
     }
 
     final ss = useCase(useCase is DataManagerStreamingUseCase
-            ? tuple2<P?, BehaviorSubject<D>>(params, rx)
+            ? tuple2<P, BehaviorSubject<D>>(params, rx)
             : params)
         .onFailureForwardTo(_onFailure)
         .map((d) => d is D ? d : mapFn!.call(value, d))

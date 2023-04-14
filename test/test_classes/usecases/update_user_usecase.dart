@@ -21,6 +21,6 @@ class UpdateUserUseCase extends DataManagerUseCase<String?, User> {
   }
 
   User updateUser() {
-    return User.name.set(value!, param!);
+    return User.name.set(value, param!);
   }
 }
