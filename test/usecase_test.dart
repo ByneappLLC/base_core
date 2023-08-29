@@ -6,9 +6,9 @@ class NullValueFailure extends Failure {}
 
 class ParsingFailure extends Failure {}
 
-class TestUseCase extends UseCase<String, int> {
+class TestUseCase extends UseCase<String?, int> {
   @override
-  Future<Either<Failure, int>> execute(String params) async {
+  Future<Either<Failure, int>> execute(String? params) async {
     if (params == null) {
       return left(NullValueFailure());
     }
@@ -28,10 +28,10 @@ void main() {
     final useCase = TestUseCase();
     expect(await useCase.result(null, (e) => e.isLeft()), true);
 
-    expect(await useCase.result('56', (e) => e.fold(null, (r) => r)), 56);
+    expect(await useCase.result('56', (e) => e.fold((_) => 0, (r) => r)), 56);
 
     final failure =
-        await useCase.result('params', (e) => e.fold((l) => l, null));
+        await useCase.result('params', (e) => e.fold((l) => l, (_) => 0));
 
     expect(failure.runtimeType, ParsingFailure);
   });
